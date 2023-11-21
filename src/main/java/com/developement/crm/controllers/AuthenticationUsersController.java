@@ -5,6 +5,9 @@ import com.developement.crm.model.UserModel;
 import com.developement.crm.repositories.UsersRepository;
 import com.developement.crm.services.TokenService;
 import com.developement.crm.services.UsersService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,7 +56,6 @@ public class AuthenticationUsersController {
 
                 String token = tokenService.generateToken(user);
 
-
                 user.setPassword(newPassword);
 
                 usersRepository.save(user);
@@ -65,7 +67,9 @@ public class AuthenticationUsersController {
         }
 
     }
-
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User logged in successfully"),
+            @ApiResponse(responseCode = "404", description = "Customer not found")})
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody @Valid UserLoginDto data){
 

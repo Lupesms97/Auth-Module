@@ -1,4 +1,6 @@
 package com.developement.crm.dtos;
 
-public record TokenValidation(String type, String message) {
+import com.developement.crm.enums.StatusToken;
+
+public record TokenValidation(StatusToken status, String message) {
 }

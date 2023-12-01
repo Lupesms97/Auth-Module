@@ -1,16 +1,18 @@
 package com.developement.crm.controllers;
 
 import com.developement.crm.dtos.*;
+import com.developement.crm.enums.StatusToken;
+import com.developement.crm.exceptionHandlers.UserNotFoundException;
 import com.developement.crm.model.UserModel;
 import com.developement.crm.repositories.UsersRepository;
 import com.developement.crm.services.TokenService;
 import com.developement.crm.services.UsersService;
-import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -18,9 +20,8 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.HashMap;
 import java.util.List;
 
 
@@ -54,7 +55,7 @@ public class AuthenticationUsersController {
                 String oldPassword = user.getPassword();
                 String newPassword = new BCryptPasswordEncoder().encode(oldPassword);
 
-                String token = tokenService.generateToken(user);
+//                String token = tokenService.generateToken(user);
 
                 user.setPassword(newPassword);
 
@@ -65,12 +66,16 @@ public class AuthenticationUsersController {
         } catch (Exception e){
             throw new RuntimeException(e);
         }
-
     }
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "User logged in successfully"),
-            @ApiResponse(responseCode = "404", description = "Customer not found")})
-    @PostMapping("/login")
+            @ApiResponse(responseCode = "200", description = "User logged in successfully", content =
+                    { @Content(mediaType = "application/json", schema =
+                    @Schema(implementation = ResponseLoginDto.class)) }),
+            @ApiResponse(responseCode = "401", description = "User or password not found", content =
+            { @Content(mediaType = "application/json", schema =
+            @Schema(implementation = UserNotFoundException.class)) }) })
+
+@PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody @Valid UserLoginDto data){
 
         try {
@@ -78,7 +83,7 @@ public class AuthenticationUsersController {
 
             if (user == null) {
                 String message = "Usuário não encontrado"+data.getLogin();
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(message);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(message);
             }
 
             var userNamePassword = new UsernamePasswordAuthenticationToken(data.getLogin(), data.getPassword());
@@ -94,32 +99,53 @@ public class AuthenticationUsersController {
             return ResponseEntity.badRequest().body(new ResponseLoginDto(token, message));
         }
     }
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "usuario cadastrado com sucesso", content =
+                    { @Content(mediaType = "application/json", schema =
+                    @Schema(implementation = MessageDto.class)) }),
+            @ApiResponse(responseCode = "409", description = "login ou email já castrato", content =
+                    { @Content(mediaType = "application/json", schema =
+                    @Schema(implementation = MessageDto.class)) }) })
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody @Valid UsersDto user){
-        HashMap mensagem = new HashMap();
+
 
         try {
             UserDetails userDetails = usersRepository.findByLogin(user.getLogin());
             if (userDetails != null) {
-                mensagem.put("mensagem", "login já castrato");
-                return ResponseEntity.status(HttpStatus.CONFLICT).body(mensagem);
+                MessageDto response = new MessageDto("mensagem", "login já castrato");
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
             }else {
                 user.setPassword(new BCryptPasswordEncoder().encode(user.getPassword()));
                 usersService.creatNewUser(UsersDto.convertToUserModel(user));
 
-                mensagem.put("mensagem", "usuario cadastrado com sucesso");
+                MessageDto response = new MessageDto("mensagem", "usuario cadastrado com sucesso");
 
-                return ResponseEntity.status(HttpStatus.CREATED).body(mensagem);
+                return ResponseEntity.status(HttpStatus.CREATED).body(response);
             }
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e);
         }
 
     }
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "token valid", content =
+                    { @Content(mediaType = "application/json", schema =
+                    @Schema(implementation = TokenValidation.class)) }),
+            @ApiResponse(responseCode = "401", description = "token invalid", content =
+                    { @Content(mediaType = "application/json", schema =
+                    @Schema(implementation = TokenValidation.class)) }) })
     @PostMapping("validation")
-    public TokenValidation validation(@RequestParam String tokenKey){
+    public ResponseEntity<TokenValidation> validation(@RequestParam String tokenKey){
         String response = tokenService.validateToken(tokenKey);
-        return (response!= "") ? new TokenValidation(tokenKey, "valid") : new TokenValidation(tokenKey, "invalid");
+
+
+        return (response.equalsIgnoreCase("Token not validated")) ?
+                ResponseEntity.status(HttpStatus.ACCEPTED).body(new TokenValidation(StatusToken.VALID, "token has been founded")) :
+                ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new TokenValidation(StatusToken.INVALID, "token not found"));
+
+
+
     }
 }

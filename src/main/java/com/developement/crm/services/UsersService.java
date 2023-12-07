@@ -3,6 +3,7 @@ package com.developement.crm.services;
 import com.developement.crm.exceptionHandlers.UserNotFoundException;
 import com.developement.crm.model.UserModel;
 import com.developement.crm.repositories.UsersRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +27,7 @@ public class UsersService {
         this.tokenService = tokenService;
     }
 
+    @Transactional
     public UserModel creatNewUser(UserModel user) {
         if(user.getId() != null && userRepository.findUserModelByLogin(user.getLogin()).isPresent()) {
             return user;

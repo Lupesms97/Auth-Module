@@ -1,11 +1,8 @@
 package com.developement.crm.services;
 
 import com.auth0.jwt.JWT;
-import com.developement.crm.exceptionHandlers.NoUserFindOnSession;
-import com.developement.crm.model.UserModel;
 import com.developement.crm.repositories.UsersRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -13,7 +10,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
 
 @RequiredArgsConstructor
 @Service
@@ -33,7 +29,6 @@ public class AuthenticationService implements UserDetailsService {
                 // Trate o caso em que não há usuário autenticado.
                 return "Nenhum usuário autenticado encontrado";
             }
-
     }
 
     public static String getUserbyToken(String token) {

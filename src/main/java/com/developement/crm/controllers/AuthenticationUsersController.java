@@ -1,9 +1,12 @@
 package com.developement.crm.controllers;
 
 import com.developement.crm.dtos.*;
+import com.developement.crm.dtos.UserLoginDto;
+import com.developement.crm.dtos.UsersDto;
 import com.developement.crm.enums.StatusToken;
 import com.developement.crm.exceptionHandlers.UserNotFoundException;
 import com.developement.crm.model.UserModel;
+import com.developement.crm.rabbit.service.RabbitMqService;
 import com.developement.crm.repositories.UsersRepository;
 import com.developement.crm.services.TokenService;
 import com.developement.crm.services.UsersService;
@@ -20,11 +23,9 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
-
-
+import constants.RabbitMqConstants;
 @RestController
 @RequestMapping("auth")
 @RequiredArgsConstructor
@@ -33,14 +34,13 @@ public class AuthenticationUsersController {
 
     private final UsersService usersService;
 
-
     private final TokenService tokenService;
-
 
     private final AuthenticationManager authenticationManager;
 
-
     private final UsersRepository usersRepository;
+
+    private final RabbitMqService rabbitMqService;
 
 
 
@@ -79,6 +79,8 @@ public class AuthenticationUsersController {
     public ResponseEntity<?> login(@RequestBody @Valid UserLoginDto data){
 
         try {
+            rabbitMqService.send(RabbitMqConstants.FILA_LOGIN, data);
+
             UserModel user = usersService.findUserByLogin(data.getLogin());
 
             if (user == null) {
@@ -112,6 +114,9 @@ public class AuthenticationUsersController {
 
 
         try {
+
+            rabbitMqService.send(RabbitMqConstants.FILA_CREATION,user);
+
             UserDetails userDetails = usersRepository.findByLogin(user.getLogin());
             if (userDetails != null) {
                 MessageDto response = new MessageDto("mensagem", "login já castrato");

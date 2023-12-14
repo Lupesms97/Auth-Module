@@ -10,12 +10,13 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.BeanUtils;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class UsersDto {
+public class UsersDto implements Serializable {
     @NotBlank(message = "email não pode ser vazio")
     @Email(message = "email invalido")
     private String email;

@@ -1,6 +1,6 @@
 package com.developement.crm.rabbit.config;
 
-import com.developement.crm.rabbit.constants.RabbitMqConstants;
+import constants.RabbitMqConstants;
 import jakarta.annotation.PostConstruct;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.Binding;
@@ -41,21 +41,25 @@ public class RabbitMqConnection {
 
         Queue filaLogin = this.fila(RabbitMqConstants.FILA_LOGIN);
         Queue filaValidation = this.fila(RabbitMqConstants.FILA_VALIDATION);
+        Queue filaCreation = this.fila(RabbitMqConstants.FILA_CREATION);
+
 
         DirectExchange troca = this.trocaDireta();
 
         Binding ligacaoLogin = this.relacionamento(filaLogin, troca);
         Binding ligacaoValidation = this.relacionamento(filaValidation, troca);
+        Binding ligacaoCreation = this.relacionamento(filaCreation, troca);
 
 
         this.amqpAdmin.declareQueue(filaLogin);
         this.amqpAdmin.declareQueue(filaValidation);
+        this.amqpAdmin.declareQueue(filaCreation);
 
         this.amqpAdmin.declareExchange(troca);
 
         this.amqpAdmin.declareBinding(ligacaoLogin);
         this.amqpAdmin.declareBinding(ligacaoValidation);
-
+        this.amqpAdmin.declareBinding(ligacaoCreation);
     }
 
 }
